@@ -1,0 +1,14 @@
+name: cv
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - numpy
+  - matplotlib
+  - pandas
+  - opencv
+  - pip
+  - pip:
+    - jupyterlab
+    - torch
