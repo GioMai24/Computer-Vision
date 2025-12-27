@@ -14,8 +14,8 @@ if __name__ == "__main__":
     ### DANGER ZONE
     print('Oh man...')
     
-    os.makedirs(data_path + "MEL/", exist_okay=True)
-    os.makedirs(data_path + "NV/", exist_okay=True)
+    makedirs(data_path + "MEL/", exist_okay=True)
+    makedirs(data_path + "NV/", exist_okay=True)
     
     with scandir(data_path + "ISIC_2019_Training_Input/ISIC_2019_Training_Input/") as Dir:
         for entry in Dir:
