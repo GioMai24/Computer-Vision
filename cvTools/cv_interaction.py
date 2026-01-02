@@ -1,20 +1,20 @@
 import cv2 as cv
 
-def show(img, win_name='window'):
+def show(images, win_names=['window']):
     """
-    Quick way to cv.imshow an image.
+    Quick way to cv.imshow images.
 
     Parameters
     ----------
-    img : ndarray
-        The image to be shown, preferably read with cv.imread().
-    win_name : str
-        Name of the window to create.
+    images : list of ndarray
+        The images to be shown, preferably read with cv.imread().
+    win_name : list of str
+        Name of the windows to create (one for each image).
     """
-    cv.namedWindow(win_name, cv.WINDOW_NORMAL)
-    
+    if type(images) != list or type(win_names) != list: raise ValueError('Unfortunately images and win_names must be lists...')
+    for name in win_names: cv.namedWindow(name, cv.WINDOW_NORMAL)    
     while True:
-        cv.imshow(win_name, img)
+        for i, name in enumerate(win_names): cv.imshow(name, images[i])
         if cv.waitKey(20) & 0xFF == 27: break
     cv.destroyAllWindows()
 
@@ -60,8 +60,8 @@ def threshing(img_path, c_space, low=None, high=None, thresh=None):
         M = 179 if c == 'H' else 255
         cv.createTrackbar(c + ' - Low', touch, 0, M, still)
         cv.createTrackbar(c + ' - High', touch, 0, M, still)
-        if low: cv.setTrackbarPos(c + ' - Low', touch, low[i])
-        if high: cv.setTrackbarPos(c + ' - High', touch, high[i])
+        if low is not None: cv.setTrackbarPos(c + ' - Low', touch, low[i])
+        if high is not None: cv.setTrackbarPos(c + ' - High', touch, high[i])
         
     while True:
         low = tuple(cv.getTrackbarPos(c + ' - Low', touch) for c in c_space)
