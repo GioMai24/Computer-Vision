@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import pandas as pd
 from os import scandir, makedirs
 from shutil import move, rmtree
