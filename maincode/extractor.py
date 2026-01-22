@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Main processing script to segment images and extract features."""
 import os
 import numpy as np
 import cv2 as cv
@@ -8,6 +9,21 @@ from tqdm import tqdm
 
 
 def thresholder(lab):
+    """
+    Apply threshold on H to remove colored artifacts, on grayscale to remove silhouette, and finally Otsu's thresholding.
+
+    Parameters
+    ----------
+    lab : ndarray
+        The image to be filtered, to be passed in LAB space.
+
+    Returns
+    -------
+    otsu : array
+        Binary output mask.
+    lab : ndarray
+        Original cropped image.
+    """
     ## H thresh
     bgr = cv.cvtColor(lab, cv.COLOR_LAB2BGR)
     temp = cv.cvtColor(bgr, cv.COLOR_BGR2HSV)
@@ -15,14 +31,14 @@ def thresholder(lab):
     _, thresh2 = cv.threshold(temp[..., 0], 110, 255, cv.THRESH_BINARY)
     thresh = cv.bitwise_or(thresh, thresh2)
 
-    ## lensing
+    ## silhouette
     temp = cv.cvtColor(bgr, cv.COLOR_BGR2GRAY)
     lens = np.zeros_like(temp)
     cv.thresholdWithMask(temp, lens, thresh, 10, 255, cv.THRESH_BINARY)  # lens is the new mask of active pxs
     rows = [cv.hasNonZero(lens[i]) for i in range(lens.shape[0])]
     cols = [cv.hasNonZero(lens[:, i]) for i in range(lens.shape[1])]
+    # additional cropping to break possible otsu rings (see report)
     lens = (lens[rows][:, cols])[40:-40, 40:-40].copy()
-    temp = (temp[rows][:, cols])[40:-40, 40:-40].copy()
     lab = (lab[rows][:, cols])[40:-40, 40:-40, :].copy()
     
     ## otsu
@@ -31,40 +47,83 @@ def thresholder(lab):
     return otsu, lab
 
 
-def counter(otsu, max_area):
+
+def counter(otsu, min_area):
+    """
+    Find and filter patches on a binary mask depending on minimum area, and centroid position.
+
+    Parameters
+    ----------
+    otsu : array
+        Binary mask to filter.
+    min_area : int
+        Minimum area of the patches to keep.
+
+    Returns
+    -------
+    conts : list
+        Full list of found contours.
+    contSave : list
+        Indices of contours to keep.
+    """
     conts, _ = cv.findContours(otsu, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
     contSave = []
     for i, cont in enumerate(conts):
         mom = cv.moments(cont)
-        if mom['m00'] < max_area: continue  # Area
-        cx = int(mom['m10'] / mom['m00'])  # centroid position
+        if mom['m00'] < min_area: continue  # Area filter
+        cx = int(mom['m10'] / mom['m00'])  # centroid x position
         lim = otsu.shape[1] * .1
         if cx < lim or cx > otsu.shape[1] - lim: continue
-        cy = int(mom['m01'] / mom['m00'])
+        cy = int(mom['m01'] / mom['m00'])  # centroid y position
         lim = otsu.shape[0] * .1
         if cy < lim or cy > otsu.shape[0] - lim: continue
         contSave.append(i)
-    return contSave
+    return conts, contSave
+
 
 
 def main(img_path, clahe, sift):
+    """
+    Segmentation pipeline and feature extraction on a single image.
+
+    Parameters
+    ----------
+    img_path : path-like object
+        Path to the image to process.
+    clahe : cv2.CLAHE object
+        Initialized CLAHE to be applied.
+    sift : cv2.SIFT object
+        Initialized SIFT to be applied.
+
+    Returns
+    -------
+    height : int
+        Height of the final image.
+    width : int
+        Width of the final image.
+    symms : list of floats
+        Vertical, horizontal and central symmetry score.
+    means : list of floats
+        Means of the LAB channels.
+    stds : list of floats
+        Standard deviations of the LAB channels.
+    feat_num : int
+        Number of detected features by SIFT.
+    """
     img = cv.imread(img_path)[1:-1, 1:-1, :]  # some photos have white borders
     lab = cv.cvtColor(img, cv.COLOR_BGR2LAB)
     
     ### trimming hair
-    lab = cv.dilate(lab, np.ones((3,3), dtype=np.uint8), iterations=2)
-    lab = cv.erode(lab, np.ones((3,3), dtype=np.uint8), iterations=2)
+    lab = cv.morphologyEx(lab, cv.MORPH_CLOSE, np.ones((3,3), dtype=np.uint8), iterations=2)
     
     ### CLAHE
     lab[..., 0] = clahe.apply(lab[..., 0])
     
-    
-    ## h thresholding
+    ### thresholding
     otsu, lab = thresholder(lab)
-    
+
     ### kill small patches
-    conts, _ = cv.findContours(otsu, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
-    contSave = counter(otsu, 1000)
+    conts, contSave = counter(otsu, 1000)
     if len(contSave) == 0: contSave = counter(otsu, 100)
     if len(contSave) != 0:
         otsu = np.zeros_like(otsu)
@@ -87,7 +146,7 @@ def main(img_path, clahe, sift):
     hor = cv.flip(otsu, 1)
     center = cv.flip(otsu, 0)
     
-    ### output vector
+    ### output features vector
     height = otsu.shape[0]
     width = otsu.shape[1]
     means, stds = cv.meanStdDev(lab, mask=otsu)
@@ -96,9 +155,9 @@ def main(img_path, clahe, sift):
     return height, width, symms, means, stds, feat_num 
 
 
+
 if __name__ == '__main__':
     data_path = os.path.expanduser('~/uni/Computer-Vision/data/')
-    # labels = pd.read_csv(f'{data_path}ISIC_2019_GroundTruth.csv', dtype={'image':str, 'MEL':bool, 'NV':bool}).drop(columns='NV')
     clahe = cv.createCLAHE(clipLimit=1, tileGridSize=(10,10))
     sift = cv.SIFT_create()
     
@@ -128,6 +187,7 @@ if __name__ == '__main__':
                 for i, channel in enumerate((L_m, A_m, B_m)): channel.append(means[i].item())
                 for i, channel in enumerate((L_s, A_s, B_s)): channel.append(stds[i].item())
                 feat_nums.append(feat_num)
+                
     pd.DataFrame({
         'L_m':L_m,
         'L_s':L_s,

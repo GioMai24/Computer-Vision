@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""This is a script to clean the dataset of the unused images from classe other than Melanoma and Melanocytic Nevus. Use with extreme care, and possibly change the data_path."""
 import pandas as pd
 from os import scandir, makedirs
 from shutil import move, rmtree
@@ -27,6 +28,7 @@ def main():
     with scandir(data_path + "NV/") as Dir: NVdir_len = sum(1 for entry in Dir if entry.name.endswith(".jpg"))
     if MELdir_len + NVdir_len == len(MEL_files) + len(NV_files): rmtree(data_path + "ISIC_2019_Training_Input/")
     else: print('May have missed something.')
+
 
 
 if __name__ == "__main__": main()

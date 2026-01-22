@@ -1,3 +1,4 @@
+"""Functions to quickly interact with OpenCV images."""
 import cv2 as cv
 import numpy as np
 
@@ -20,9 +21,11 @@ def show(images, win_names=['window']):
     cv.destroyAllWindows()
 
 
+
 def still(x):
     """Do you really need help with this? Pass."""
     pass
+
 
 
 def threshing(img_path, c_space, low=None, high=None, thresh=None):
@@ -81,47 +84,4 @@ def threshing(img_path, c_space, low=None, high=None, thresh=None):
         thresh[img_path]['HIGH'] = high
         return low, high, thresh
     return low, high
-
-
-def hist_match(source: np.ndarray, reference: np.ndarray) -> np.ndarray:
-    """
-    Adjust the pixel values of a color image such that its histogram
-    matches that of a target one.
-
-    Args:
-        source (numpy.ndarray): Image to transform; the histogram is computed over the flattened array
-        reference (numpy.ndarray): Template image; can have different dimensions to source
-    Returns:
-        numpy.ndarray: The transformed output image
-    """
-
-    # Assert that the images have the same number of channels (grayscale or RGB) and the same dimensions
-    assert source.shape[2] == reference.shape[2], "Images must have the same number of channels"
-    assert source.shape[:2] == reference.shape[:2], "Images must have the same dimensions"
-
-    # Compute the source image's histogram and CDF
-    src_hists = [np.histogram(source[..., i].flatten(), 256, [0,256])[0] for i in range(source.shape[2])]
-    src_cdfs = [hist.cumsum() for hist in src_hists]
-    src_cdfs_normalized = [cdf / float(cdf.max()) for cdf in src_cdfs]
- 
-    # Compute the reference image's histogram and CDF
-    ref_hists = [np.histogram(reference[..., i].flatten(), 256, [0,256])[0] for i in range(reference.shape[2])]
-    ref_cdfs = [hist.cumsum() for hist in ref_hists]
-    ref_cdfs_normalized = [cdf / float(cdf.max()) for cdf in ref_cdfs]
-
-    # Create a lookup table to map pixel values from the source to the reference
-    lookup_tables = [np.zeros(256) for _ in range(source.shape[2])]
-    lookup_values = [0] * source.shape[2]
-    for index in range(len(lookup_tables)):
-        for src_pixel_val in range(len(src_cdfs_normalized[index])):
-            lookup_values[index]
-            for ref_pixel_val in range(len(ref_cdfs_normalized[index])):
-                if ref_cdfs_normalized[index][ref_pixel_val] >= src_cdfs_normalized[index][src_pixel_val]:
-                    lookup_values[index] = ref_pixel_val
-                    break
-            lookup_tables[index][src_pixel_val] = lookup_values[index]
-
-    # Apply the lookup table to the source image
-    matched = np.stack([cv.LUT(source[..., i], lookup_tables[i]).astype(np.uint8) for i in range(len(lookup_tables))], axis=-1)
-
-    return matched
+    
