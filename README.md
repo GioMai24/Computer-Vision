@@ -1,3 +1,8 @@
+# <p align=center> Project </p>
+Apply computer vision algorithms to isolate lesions from the [ISIC 2019 challenge dataset](https://www.kaggle.com/datasets/andrewmvd/isic-2019), then classify them using machine learning. The dataset comprises 25,331 dermoscopic images divided in nine diagnostic categories among which only two are used:
+- Melanoma – 4,522 images.
+- Melanocytic Nevus – 12,875 images.
+
 # <p align=center> Files Description </p>
 
 ## maincode folder
