@@ -5,6 +5,7 @@ import numpy as np
 def show(images, win_names=['window']):
     """
     Quick way to cv.imshow images.
+    Press ESC to exit the windows, and the function.
 
     Parameters
     ----------

@@ -9,7 +9,7 @@ This folder contains the main code of the project. Inside there are four files:
 
 ## Notebooks
 - `classification.ipynb`: since the classification algorithm is a simple implementation of the `RandomForestClassifier` class of scikit-learn, I have decided not to create a script for the task, but to have a notebook so as to run the cells more easily while changing hyperparameters values.
-- `segmentation.ipynb`: this notebook contains testing code and it is not meant to be shown. Nonetheless I have included it for completeness.
+- `segmentation.ipynb`: this notebook contains testing code, and it is not meant to be shown. Nonetheless I have included it for completeness.
 
 ## data folder
 This folder contains:
