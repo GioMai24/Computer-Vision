@@ -144,7 +144,7 @@ def main(img_path, clahe, sift):
     active = cv.countNonZero(otsu)
     vert = cv.flip(otsu, 0)
     hor = cv.flip(otsu, 1)
-    center = cv.flip(otsu, 0)
+    center = cv.flip(hor, 0)
     
     ### output features vector
     height = otsu.shape[0]
